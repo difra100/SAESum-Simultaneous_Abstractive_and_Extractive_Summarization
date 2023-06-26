@@ -14,23 +14,3 @@ In main.ipynb
 * Andrea Giuseppe Di Francesco, 1836928
 * Antonio Scardino, 2020613
 
-doc_mask, selected_y_label, selected_score, valid_sen_idxs = batch['doc_mask'], batch[
-        'selected_y_label'], batch['selected_score'], batch['valid_sen_idxs']
-    
-
-    seqs = {}
-
-    batch['input_ids'] = batch['input_ids'].to(device)
-    batch['attention_mask'] = batch['attention_mask'].to(device)
-
-    seqs['input_ids'] = batch['input_ids'].view(-1, max_doc_len*max_seq_len)
-    seqs['attention_mask'] = batch['attention_mask']
-
-
-    doc_mask = doc_mask.to(device)
-    selected_y_label = selected_y_label.to(device)
-    selected_score = selected_score.to(device)
-    valid_sen_idxs = valid_sen_idxs.to(device)
-
-    num_documents = seqs['input_ids'].size(0)
-    num_sentences = seqs['input_ids'].size(1)
