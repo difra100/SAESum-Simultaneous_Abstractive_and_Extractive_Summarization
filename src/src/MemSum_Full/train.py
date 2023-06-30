@@ -529,3 +529,6 @@ for epoch in range(current_epoch, num_of_epochs):
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict()
             }, model_folder+"/model_batch_%d.pt" % (current_batch), max_to_keep=100)
+
+if wandb_logger:
+    wandb.finish()
