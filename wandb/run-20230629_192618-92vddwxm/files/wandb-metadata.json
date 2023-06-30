@@ -1,0 +1,130 @@
+{
+    "os": "Linux-5.15.0-76-generic-x86_64-with-glibc2.31",
+    "python": "3.9.12",
+    "heartbeatAt": "2023-06-29T17:26:20.192609",
+    "startedAt": "2023-06-29T17:26:18.011824",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "-pegasus_mode",
+        "True",
+        "-training_corpus_file_name",
+        "src/MemSum/data/PubMed_truncated/train_PUBMED_labelled.jsonl",
+        "-validation_corpus_file_name",
+        "src/MemSum/data/PubMed_truncated/val_PUBMED.jsonl",
+        "-model_folder",
+        "src/MemSum/model/MemSum_Full/PubMed_truncated/run1/",
+        "-log_folder",
+        "src/MemSum/log/MemSum_Full/PubMed_truncated/run3/",
+        "-vocabulary_file_name",
+        "src/MemSum/model/glove/vocabulary_200dim.pkl",
+        "-pretrained_unigram_embeddings_file_name",
+        "src/MemSum/model/glove/unigram_embeddings_200dim.pkl",
+        "-max_seq_len",
+        "100",
+        "-max_doc_len",
+        "150",
+        "-num_of_epochs",
+        "10",
+        "-save_every",
+        "1000",
+        "-n_device",
+        "1",
+        "-batch_size_per_device",
+        "1",
+        "-max_extracted_sentences_per_document",
+        "7",
+        "-moving_average_decay",
+        "0.999",
+        "-p_stop_thres",
+        "0.6"
+    ],
+    "state": "running",
+    "program": "/home/anto/SAESum-Simultaneous_Abstractive_and_Extractive_Summarization/src/MemSum/src/MemSum_Full/train.py",
+    "codePath": "src/MemSum/src/MemSum_Full/train.py",
+    "git": {
+        "remote": "https://github.com/difra100/SAESum-Simultaneous_Abstractive_and_Extractive_Summarization.git",
+        "commit": "010424ee5c8be4d423a57af68845a617e26c53a4"
+    },
+    "email": "antonio.scard97@gmail.com",
+    "root": "/home/anto/SAESum-Simultaneous_Abstractive_and_Extractive_Summarization",
+    "host": "anto-GF65-Thin-10UE",
+    "username": "anto",
+    "executable": "/home/anto/anaconda3/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 2.8910000000000005,
+        "min": 800.0,
+        "max": 5000.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 4.396,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        },
+        {
+            "current": 2.6,
+            "min": 800.0,
+            "max": 5000.0
+        }
+    ],
+    "disk": {
+        "total": 182.60631942749023,
+        "used": 92.62282943725586
+    },
+    "memory": {
+        "total": 15.438228607177734
+    }
+}

@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "src/MemSum/src/MemSum_Full/train.py", line 2, in <module>
+    from model import *
+  File "/home/anto/SAESum-Simultaneous_Abstractive_and_Extractive_Summarization/src/MemSum/src/MemSum_Full/model.py", line 13, in <module>
+    model_s = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+  File "/home/anto/.local/lib/python3.8/site-packages/transformers/models/auto/auto_factory.py", line 423, in from_pretrained
+    config, kwargs = AutoConfig.from_pretrained(
+  File "/home/anto/.local/lib/python3.8/site-packages/transformers/models/auto/configuration_auto.py", line 725, in from_pretrained
+    config_class = CONFIG_MAPPING[config_dict["model_type"]]
+  File "/home/anto/.local/lib/python3.8/site-packages/transformers/models/auto/configuration_auto.py", line 432, in __getitem__
+    raise KeyError(key)

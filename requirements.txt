@@ -4,3 +4,4 @@ rouge_score
 pyrouge
 transformers
 sentencepiece
+torch
