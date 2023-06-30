@@ -118,3 +118,6 @@ val: 0.4202, 0.1601, 0.3759
 [current_batch: 01200] loss: 0.699, learning rate: 0.000100
 [current_batch: 01300] loss: 0.687, learning rate: 0.000100
 [current_batch: 01400] loss: 0.676, learning rate: 0.000100
+model restored!
+optimizer restored!
+current_batch restored!
