@@ -2,8 +2,11 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import os
+from datasets import load_dataset
 
 from tqdm import tqdm
+
+pubmed_dataset = load_dataset("ccdv/pubmed-summarization")
 
 
 # the corpus has been preprocessed, so here only lower is needed
@@ -63,7 +66,34 @@ class Vocab:
                 break
             sent.append(self.index2word(i))
         return " ".join(sent)
+    
+class Clean_Dataset(Dataset):
+    # This is used to clean the noisy sample from PubMed train
+    def __init__(self, abs_dataset, ext_dataset):
+        self.abs_dataset = abs_dataset
+        self.ext_dataset = ext_dataset
+        self.n_dataset = self.preprocess()
 
+    def __len__(self):
+        return len(self.n_dataset)
+    
+    def __getitem__(self, idx):
+
+        return self.n_dataset[idx]
+    
+    def preprocess(self):
+        new_dataset = []
+        count = 0
+        for idx in range(len(self.ext_dataset)):
+            
+            if self.dataset[idx]['article'] != "" and :
+                new_dataset.append({"article": self.dataset[idx]['article'], 'abstract': self.dataset[idx]['abstract']})
+            else:
+                count+=1
+        print(f"Discarded {count} elements.......")
+
+        return new_dataset
+train_pubmed = Clean_Dataset(pubmed_dataset['train'])
 
 class ExtractionTrainingDataset(Dataset):
     def __init__(self,  corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=None):
@@ -73,6 +103,8 @@ class ExtractionTrainingDataset(Dataset):
         # corpus is a list
         self.corpus = corpus
         self.peg_tokenizer = peg_tokenizer
+        if self.peg_tokenizer != None:
+            self.abs_dataset = train_pubmed
         print(self.peg_tokenizer)
 
     def __len__(self):
@@ -83,6 +115,14 @@ class ExtractionTrainingDataset(Dataset):
         doc_data = self.corpus[idx]
 
         sentences = doc_data["text"]
+        # print("EXTRACTIVE TEXT: \n", sentences[0])
+        if self.abs_dataset[idx]['article'].startswith(sentences[0]):
+            print("CIAOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+        else:
+            print("CAZZATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+            print(f"\nEXT{idx}: \n", sentences[0])
+            print(f"\nABS{idx}: \n", self.abs_dataset[idx]['article'][:200])
+
         indices = doc_data["indices"]
         scores = np.array(doc_data["score"])
         summary = doc_data["summary"]
@@ -121,6 +161,12 @@ class ExtractionTrainingDataset(Dataset):
             seqs['selected_y_label'] = selected_y_label
             seqs['selected_score'] = selected_score
             seqs['valid_sen_idxs'] = valid_sen_idxs
+            seqs['abstract'] = self.abs_dataset[idx]['abstract']
+            # print("ARTICLE: \n", self.abs_dataset['train'][idx]['article'])
+
+            # print("ABSTRACT: \n", seqs['abstract'])
+            # print("---------------------------------------------------------")
+
             return seqs
 
         else:

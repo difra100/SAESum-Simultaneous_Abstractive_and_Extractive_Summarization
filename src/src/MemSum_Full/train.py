@@ -156,7 +156,7 @@ print(peg_tokenizer)
 
 train_dataset = ExtractionTrainingDataset(
     training_corpus,  vocab, max_seq_len,  max_doc_len, peg_tokenizer=peg_tokenizer)
-train_data_loader = DataLoader(train_dataset, batch_size=batch_size_per_device * n_device, shuffle=True, num_workers=2,  drop_last=True,
+train_data_loader = DataLoader(train_dataset, batch_size=batch_size_per_device * n_device, shuffle=False, num_workers=2,  drop_last=True,
                                worker_init_fn=lambda x: [np.random.seed(int(time.time())+x), torch.manual_seed(int(time.time()) + x)],  pin_memory=True)
 total_number_of_samples = train_dataset.__len__()
 val_dataset = ExtractionValidationDataset(
