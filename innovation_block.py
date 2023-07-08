@@ -102,25 +102,42 @@ class AbstractToExtractConverter(torch.nn.Module):
 
         B, S, T, dim = x.shape
         x = x.reshape(B, S*T, dim)
-        print("LSTM input: ", x.shape)
+        # print("LSTM input: ", x.shape)
 
         output, (h,c) = self.lstm(x)
-        print("LSTM output: ", output.shape)
+        # print("LSTM output: ", output.shape)
 
         # Activation
         output = F.relu(output)
         x = self.norm_out(output)
         x = F.relu(self.ln_out(x))
 
-        print("CONVERTER OUTPUT: ", x.shape)
+        # print("CONVERTER OUTPUT: ", x.shape)
 
         return x
+class InnovationBlock(torch.nn.Module):
 
-def get_converter_output_from_batch(texts, tokenizer, max_len, device, model_s):
+    def __init__(self, dim, n_heads):
+        super().__init__()
+        self.converter_net = AbstractToExtractConverter(dim)
+        self.attn_layer = torch.nn.MultiheadAttention(dim, n_heads, batch_first = True)
+
+    def forward(self, embedded_abs, embedded_global):
+        # embedded_global is key, converter_out is associated with valye and key
+        converter_out = self.converter_net(embedded_abs)
+
+        output_attention, _ = self.attn_layer(embedded_global, converter_out, converter_out)
+
+        return output_attention
+
+
+def get_embedded_abstract_from_abs(texts, tokenizer, n_tokens, device, peg_encoder):
+    
+    # List of sentences
     batch_of_abstracts = create_list_of_sentences(texts)
 
     # get lists of dicts (input_ids: , attention_mask: )
-    tokenized_sentences = [tokenize_list_of_sentences(abstract, tokenizer, max_len = max_len) for abstract in batch_of_abstracts]
+    tokenized_sentences = [tokenize_list_of_sentences(abstract, tokenizer, max_len = n_tokens) for abstract in batch_of_abstracts]
     
     # print(tokenized_sentences[0]['input_ids'].shape)
     max_sentences = get_the_longest_sentence(tokenized_sentences)
@@ -131,13 +148,9 @@ def get_converter_output_from_batch(texts, tokenizer, max_len, device, model_s):
     abstract_tensor = get_abstract_tensor(tokenized_sentences, max_sentences, device)
     # get embeddings 
 
-    embedded_abstract_tensor = get_embeddings(model_s, abstract_tensor, batch_size, max_sentences, max_len)
+    embedded_abstract_tensor = get_embeddings(peg_encoder, abstract_tensor, batch_size, max_sentences, n_tokens)
 
-    converter_net = AbstractToExtractConverter(embedded_abstract_tensor.shape[-1]).to(device)
-
-    converter_output = converter_net(embedded_abstract_tensor)
-    
-    return converter_output
+    return embedded_abstract_tensor
 
 if __name__ == '__main__':
 
@@ -156,6 +169,17 @@ if __name__ == '__main__':
     max_len = 100
     model_s = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint)
     model_s.to(device)
-    # get lists of lists of sentences (number of batches)
 
-    converter_output = get_converter_output_from_batch(texts, tokenizer, max_len, device)
+
+    
+    embedded_vec = get_embedded_abstract_from_abs(texts, tokenizer, max_len, device, model_s)
+
+    # global_enc MUST be taken from the global sentence encoder
+    global_enc = torch.randn((3, 1000, 768), device = device)
+
+    innovation = InnovationBlock(dim = 768, n_heads = 8)
+
+    innovated_tensor = innovation(embedded_vec, global_enc)
+
+    print("INNOVATED TENSOR: ", innovated_tensor.shape)
+    
