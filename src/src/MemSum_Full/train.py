@@ -9,13 +9,18 @@ import wandb
 import sys
 import os
 import json 
+import numpy as np
+import random
+import torch
 
 # os.system("ls src")
+
+
 sys.path.append("src/")
-from training_utils import * 
 # pa
 # from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from training_utils import * 
 
 import os
 import sys
@@ -27,6 +32,9 @@ import copy
 
 import argparse
 
+
+seed_value = 42
+set_seed(seed_value)
 
 def update_moving_average(m_ema, m, decay):
     with torch.no_grad():
@@ -93,6 +101,8 @@ parser.add_argument("-p_stop_thres", type=float, default=0.7)
 parser.add_argument("-apply_length_normalization", type=int, default=1)
 parser.add_argument("-pegasus_mode", type=bool, default=False)
 parser.add_argument("-wandb_logger", type=bool, default=False)
+parser.add_argument("-two_heads", type=bool, default=False)
+
 
 
 args = parser.parse_args()
@@ -125,8 +135,12 @@ max_extracted_sentences_per_document = args.max_extracted_sentences_per_document
 moving_average_decay = args.moving_average_decay
 p_stop_thres = args.p_stop_thres
 pegasus_mode = args.pegasus_mode
+two_heads = args.two_heads
+
 wandb_logger = args.wandb_logger
-print(pegasus_mode)
+print("PEGASUS EMBEDDINGS enabled: ", pegasus_mode)
+print("PEGASUS ABSTRACTIVE head enabled: ", two_heads)
+
 
 if not os.path.exists(log_folder):
     os.makedirs(log_folder)
@@ -152,16 +166,28 @@ model_name = "google/pegasus-x-base"
 peg_tokenizer = AutoTokenizer.from_pretrained(
     model_name) if pegasus_mode else None
 
-print(peg_tokenizer)
+
+
+if two_heads:
+    with open("src/data/PubMed/Train_ExtAbs_PUBMED.json") as f:
+        training_corpus = json.load(f)
+    
+    with open("src/data/PubMed/Val_ExtAbs_PUBMED.json") as f:
+        validation_corpus = json.load(f)
 
 train_dataset = ExtractionTrainingDataset(
-    training_corpus,  vocab, max_seq_len,  max_doc_len, peg_tokenizer=peg_tokenizer)
-train_data_loader = DataLoader(train_dataset, batch_size=batch_size_per_device * n_device, shuffle=False, num_workers=2,  drop_last=True,
+    training_corpus,  vocab, max_seq_len,  max_doc_len, peg_tokenizer=peg_tokenizer, two_heads = two_heads)
+
+
+
+train_data_loader = DataLoader(train_dataset, batch_size=batch_size_per_device * n_device, shuffle=True, num_workers=20,  drop_last=True,
                                worker_init_fn=lambda x: [np.random.seed(int(time.time())+x), torch.manual_seed(int(time.time()) + x)],  pin_memory=True)
 total_number_of_samples = train_dataset.__len__()
 val_dataset = ExtractionValidationDataset(
-    validation_corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=peg_tokenizer)
-val_data_loader = DataLoader(val_dataset, batch_size=batch_size_per_device * n_device, shuffle=False, num_workers=2,  drop_last=False,
+    validation_corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=peg_tokenizer, two_heads = two_heads)
+
+
+val_data_loader = DataLoader(val_dataset, batch_size=batch_size_per_device * n_device, shuffle=False, num_workers=20,  drop_last=False,
                              worker_init_fn=lambda x: [np.random.seed(int(time.time()) + 1 + x), torch.manual_seed(int(time.time()) + 1 + x)],  pin_memory=True)
 
 local_sentence_encoder = LocalSentenceEncoder(
@@ -252,10 +278,12 @@ if ckpt is not None:
     LOG("current_batch restored!")
     print("current_batch restored!")
 
-np.random.seed()
+
 
 rouge_cal = rouge_scorer.RougeScorer(
     ['rouge1', 'rouge2', 'rougeLsum'], use_stemmer=True)
+
+
 
 
 def train_iteration(batch):

@@ -67,61 +67,31 @@ class Vocab:
             sent.append(self.index2word(i))
         return " ".join(sent)
     
-class Clean_Dataset(Dataset):
-    # This is used to clean the noisy sample from PubMed train
-    def __init__(self, abs_dataset, ext_dataset):
-        self.abs_dataset = abs_dataset
-        self.ext_dataset = ext_dataset
-        self.n_dataset = self.preprocess()
 
-    def __len__(self):
-        return len(self.n_dataset)
-    
-    def __getitem__(self, idx):
-
-        return self.n_dataset[idx]
-    
-    def preprocess(self):
-        new_dataset = []
-        count = 0
-        for idx in range(len(self.ext_dataset)):
-            
-            if self.dataset[idx]['article'] != "" and :
-                new_dataset.append({"article": self.dataset[idx]['article'], 'abstract': self.dataset[idx]['abstract']})
-            else:
-                count+=1
-        print(f"Discarded {count} elements.......")
-
-        return new_dataset
-train_pubmed = Clean_Dataset(pubmed_dataset['train'])
 
 class ExtractionTrainingDataset(Dataset):
-    def __init__(self,  corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=None):
+    def __init__(self,  corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=None, two_heads = False):
         self.vocab = vocab
         self.max_seq_len = max_seq_len
         self.max_doc_len = max_doc_len
         # corpus is a list
         self.corpus = corpus
         self.peg_tokenizer = peg_tokenizer
-        if self.peg_tokenizer != None:
-            self.abs_dataset = train_pubmed
-        print(self.peg_tokenizer)
-
+        self.two_heads = two_heads
+        
     def __len__(self):
         return len(self.corpus)
 
     def __getitem__(self, idx):
 
-        doc_data = self.corpus[idx]
-
-        sentences = doc_data["text"]
-        # print("EXTRACTIVE TEXT: \n", sentences[0])
-        if self.abs_dataset[idx]['article'].startswith(sentences[0]):
-            print("CIAOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+        if not self.two_heads:
+            doc_data = self.corpus[idx]
         else:
-            print("CAZZATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-            print(f"\nEXT{idx}: \n", sentences[0])
-            print(f"\nABS{idx}: \n", self.abs_dataset[idx]['article'][:200])
+            doc_data = self.corpus[idx][1]
+        sentences = doc_data["text"]
+        
+        # print("\nEXTRACTIVE TEXT: \n", sentences[0])
+        
 
         indices = doc_data["indices"]
         scores = np.array(doc_data["score"])
@@ -161,10 +131,16 @@ class ExtractionTrainingDataset(Dataset):
             seqs['selected_y_label'] = selected_y_label
             seqs['selected_score'] = selected_score
             seqs['valid_sen_idxs'] = valid_sen_idxs
-            seqs['abstract'] = self.abs_dataset[idx]['abstract']
+
+            if self.two_heads:
+                seqs['abstract'] = self.corpus[idx][0]['abstract']
+                # article = self.corpus[idx][0]['article']
+
             # print("ARTICLE: \n", self.abs_dataset['train'][idx]['article'])
 
-            # print("ABSTRACT: \n", seqs['abstract'])
+            # print("ABSTRACT: \n", seqs['abstract'][:200])
+            # print("Article: \n", article[:200])
+
             # print("---------------------------------------------------------")
 
             return seqs
@@ -178,21 +154,28 @@ class ExtractionTrainingDataset(Dataset):
 
 
 class ExtractionValidationDataset(Dataset):
-    def __init__(self,  corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=None):
+    def __init__(self,  corpus, vocab, max_seq_len, max_doc_len, peg_tokenizer=None, two_heads = False):
         self.vocab = vocab
         self.max_seq_len = max_seq_len
         self.max_doc_len = max_doc_len
         # corpus is a list
         self.corpus = corpus
         self.peg_tokenizer = peg_tokenizer
+        self.two_heads = two_heads
 
     def __len__(self):
         return len(self.corpus)
 
     def __getitem__(self, idx):
 
-        doc_data = self.corpus[idx]
+        if not self.two_heads:
+            doc_data = self.corpus[idx]
+        else:
+            doc_data = self.corpus[idx][1]
         sentences = doc_data["text"]
+        # print("EXTRACTIVE val: \n", sentences[0])
+
+
         summary = doc_data["summary"]
 
         sentences = sentences[:self.max_doc_len]
@@ -220,6 +203,10 @@ class ExtractionValidationDataset(Dataset):
 
         if self.peg_tokenizer:
             seqs['summary'] = summary
+            if self.two_heads:
+                seqs['article'] = self.corpus[idx][0]['article']
+                # print("ARTICLE val: \n", seqs['article'][:200])
+
             return seqs
         else:
             seqs = np.asarray(seqs)
