@@ -21,7 +21,7 @@ sys.path.append("src/")
 # from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from training_utils import * 
-
+from innovation_block import *
 import os
 import sys
 
@@ -198,6 +198,17 @@ extraction_context_decoder = ExtractionContextDecoder(
     embed_dim, num_heads, hidden_dim, N_dec)
 extractor = Extractor(embed_dim, num_heads)
 
+# Innovation block
+if pegasus_mode and two_heads:
+    #model_s and peg_togenizer already initialized
+    innovation = InnovationBlock(dim = embed_dim, n_heads = num_heads).to(device)
+    model_pubmed_checkpoint = "google/pegasus-pubmed"
+    model_abs = AutoModelForSeq2SeqLM.from_pretrained(model_pubmed_checkpoint)
+    model_abs.to(device)
+    tokenizer_abs = AutoTokenizer.from_pretrained(model_pubmed_checkpoint)
+
+    
+
 # restore most recent checkpoint
 if restore_old_checkpoint:
     ckpt = load_model(model_folder)
@@ -284,8 +295,6 @@ rouge_cal = rouge_scorer.RougeScorer(
     ['rouge1', 'rouge2', 'rougeLsum'], use_stemmer=True)
 
 
-
-
 def train_iteration(batch):
 
     if pegasus_mode:
@@ -304,6 +313,8 @@ def train_iteration(batch):
         seqs['input_ids'] = batch['input_ids']
         # .view(-1, max_seq_len*max_doc_len)
         seqs['attention_mask'] = batch['attention_mask']
+        if two_heads:
+            abstracts = batch['abstract']
     else:
         seqs, doc_mask, selected_y_label, selected_score, valid_sen_idxs = batch
         num_documents = seqs.size(0)
@@ -320,6 +331,17 @@ def train_iteration(batch):
                                            num_sentences, local_sen_embed.size(1))
     global_context_embed = global_context_encoder(
         local_sen_embed, doc_mask, dropout_rate)
+    # print("global embedding: \n", global_context_embed)
+    # print("global embedding BEFORE: \n", global_context_embed.shape)
+
+    
+
+    if pegasus_mode and two_heads:
+        # abstract is defined by teacher forcing mechanism, in 'validation_iteration' abstracts is inferred by pegasus large
+        embedded_vec = get_embedded_abstract_from_abs(abstracts, peg_tokenizer, max_seq_len, device, model_s)
+        global_context_embed = innovation(embedded_vec, global_context_embed)
+        
+
 
     doc_mask_np = doc_mask.detach().cpu().numpy()
     remaining_mask_np = np.ones_like(doc_mask_np).astype(np.bool) | doc_mask_np
@@ -412,6 +434,9 @@ def validation_iteration(batch):
         seqs['input_ids'] = batch['input_ids']
         # .view(-1, max_seq_len*max_doc_len)
         seqs['attention_mask'] = batch['attention_mask']
+        if two_heads:
+            # ' article must be used to compute the abstracts '
+            articles = batch['article']
     else:
         seqs, doc_mask, sentences, summary = batch
         num_sentences = seqs.size(1)
@@ -425,6 +450,23 @@ def validation_iteration(batch):
                                            num_sentences, local_sen_embed.size(1))
     global_context_embed = global_context_encoder_ema(
         local_sen_embed, doc_mask)
+    # print("global_context BEFORE: ", global_context_embed.shape)
+ 
+    if pegasus_mode and two_heads:
+        # abstract is defined by teacher forcing mechanism, in 'validation_iteration' abstracts is inferred by pegasus large
+        # model_abs: PEGASUS-LARGE (ENCODER+DECODER) // model_s: PEGASUS-BASE (only ENCODER)
+        inputs = tokenize_sentences(articles, tokenizer=tokenizer_abs, max_len = 256, tensor_type = 'pt')
+
+        # Generate Summary
+        summary_ids = model_abs.generate(inputs["input_ids"].to(device)).detach()
+        abstracts = tokenizer_abs.batch_decode(summary_ids, skip_special_tokens=True,
+                                        clean_up_tokenization_spaces=False)
+
+        embedded_vec = get_embedded_abstract_from_abs(abstracts, peg_tokenizer, max_seq_len, device, model_s)
+        global_context_embed = innovation(embedded_vec, global_context_embed)
+        
+        # print("global_context AFTER: ", global_context_embed.shape)
+
 
     doc_mask = doc_mask.detach().cpu().numpy()
     remaining_mask_np = np.ones_like(doc_mask).astype(np.bool) | doc_mask
@@ -478,7 +520,6 @@ def validation_iteration(batch):
             (score["rouge1"].fmeasure, score["rouge2"].fmeasure, score["rougeLsum"].fmeasure))
 
     return scores
-
 
 for epoch in range(current_epoch, num_of_epochs):
     running_loss = 0
@@ -557,6 +598,9 @@ for epoch in range(current_epoch, num_of_epochs):
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict()
             }, model_folder+"/model_batch_%d.pt" % (current_batch), max_to_keep=100)
+
+
+
 
 if wandb_logger:
     wandb.finish()

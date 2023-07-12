@@ -191,7 +191,6 @@ class MultiHeadPoolingLayer( nn.Module ):
 class LocalSentenceEncoder( nn.Module ):
     def __init__( self, vocab_size, pad_index, embed_dim, num_heads , hidden_dim , num_enc_layers , pretrained_word_embedding, pegasus_mode = False):
         super().__init__()
-        print("pad_index is: ", pad_index)
         self.addmask = AddMask( pad_index )
       
         self.rnn = nn.LSTM(  embed_dim, embed_dim, 2, batch_first = True, bidirectional = True)

@@ -214,7 +214,7 @@ class ExtractionValidationDataset(Dataset):
 
 
 # pa
-def tokenize_sentences(list_of_sentences, tokenizer, max_len):
+def tokenize_sentences(list_of_sentences, tokenizer, max_len, tensor_type = 'np'):
     ''' This function takes as input a list of sentences in the form of
 
         sentences = [
@@ -232,7 +232,7 @@ def tokenize_sentences(list_of_sentences, tokenizer, max_len):
         truncation=True,
         max_length=desired_length,
         padding='max_length',
-        return_tensors='np'
+        return_tensors=tensor_type
     )
 
     input_ids = batch_encoding["input_ids"]

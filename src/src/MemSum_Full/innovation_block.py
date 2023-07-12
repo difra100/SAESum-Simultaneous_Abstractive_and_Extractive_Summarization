@@ -19,7 +19,7 @@ def create_list_of_sentences(abstracts):
         list_of_sentences = [sentence.strip() for sentence in list_of_sentences]
         batch_of_lists.append(list_of_sentences)
 
-    print("The list of sentences is: \n", batch_of_lists)
+    
 
     return batch_of_lists
 
@@ -59,8 +59,8 @@ def get_abstract_tensor(tokenized_abstracts, n_sentences, device):
         abstract_inp = F.pad(abstract['input_ids'], pad = (0, 0, 0, n_sentences - abstract['input_ids'].shape[0]))
         abstract_att = F.pad(abstract['attention_mask'], pad = (0, 0, 0, n_sentences - abstract['attention_mask'].shape[0]))
        
-        abstract_input_ids = torch.cat((abstract_input_ids, abstract_inp.unsqueeze(0)), dim = 0)
-        abstract_attention_mask = torch.cat((abstract_attention_mask, abstract_att.unsqueeze(0)), dim = 0)
+        abstract_input_ids = torch.cat((abstract_input_ids, abstract_inp.unsqueeze(0).to(device)), dim = 0)
+        abstract_attention_mask = torch.cat((abstract_attention_mask, abstract_att.unsqueeze(0).to(device)), dim = 0)
     
     abstract_tensor['input_ids'] = abstract_input_ids
     abstract_tensor['attention_mask'] = abstract_attention_mask
@@ -84,11 +84,13 @@ def get_embeddings(model, dict, batch_size, n_sentences, n_tokens):
 
     # DIMENSIONS: batch_size x (n_sent*n_tokens) x embedding_dim
     embedded_tensor = model.model.encoder(**new_dict).last_hidden_state
-
+    # print("Embedding dimension: ", embedded_tensor.shape)
     # DIMENSIONS: batch_size x n_sent x n_tokens x embedding_dim
     embedded_tensor = embedded_tensor.reshape(batch_size, n_sentences, n_tokens, -1)
+    # print("Embedding dimension after reshape: ", embedded_tensor.shape)
 
-    return embedded_tensor
+
+    return embedded_tensor.detach()
 
 class AbstractToExtractConverter(torch.nn.Module):
 
@@ -101,11 +103,17 @@ class AbstractToExtractConverter(torch.nn.Module):
     def forward(self, x):
 
         B, S, T, dim = x.shape
-        x = x.reshape(B, S*T, dim)
+        x = x.reshape(B*S, T, dim)
         # print("LSTM input: ", x.shape)
 
-        output, (h,c) = self.lstm(x)
+        output, (h, c) = self.lstm(x)
         # print("LSTM output: ", output.shape)
+        output = output.reshape(B, S, T, 2*dim)
+        
+        # Permutation invariant transform.: B x S x T x dim ---> B x S x dim
+        output = torch.sum(output, dim = 2)
+        # print("After LSTM and summ: ", output.shape)
+
 
         # Activation
         output = F.relu(output)
@@ -135,17 +143,22 @@ def get_embedded_abstract_from_abs(texts, tokenizer, n_tokens, device, peg_encod
     
     # List of sentences
     batch_of_abstracts = create_list_of_sentences(texts)
-
+    # print("Sentences of the abstracts: \n", batch_of_abstracts)
     # get lists of dicts (input_ids: , attention_mask: )
     tokenized_sentences = [tokenize_list_of_sentences(abstract, tokenizer, max_len = n_tokens) for abstract in batch_of_abstracts]
+    # print("Tokenized sentences: \n", tokenized_sentences)
+    
+    # print("Sentences of the abstracts: \n", tokenized_sentences[0]['input_ids'].shape)
     
     # print(tokenized_sentences[0]['input_ids'].shape)
     max_sentences = get_the_longest_sentence(tokenized_sentences)
     batch_size = len(texts)
-    print(max_sentences)
+    # print("max_sentences: ", max_sentences)
 
     # get dict (input_ids: shape batch_size x n_sentences x max_len, attention_mask .........)
     abstract_tensor = get_abstract_tensor(tokenized_sentences, max_sentences, device)
+    # print("Tokenized Diz: \n", abstract_tensor)
+
     # get embeddings 
 
     embedded_abstract_tensor = get_embeddings(peg_encoder, abstract_tensor, batch_size, max_sentences, n_tokens)
@@ -171,13 +184,12 @@ if __name__ == '__main__':
     model_s.to(device)
 
 
-    
     embedded_vec = get_embedded_abstract_from_abs(texts, tokenizer, max_len, device, model_s)
 
     # global_enc MUST be taken from the global sentence encoder
     global_enc = torch.randn((3, 1000, 768), device = device)
 
-    innovation = InnovationBlock(dim = 768, n_heads = 8)
+    innovation = InnovationBlock(dim = 768, n_heads = 8).to(device)
 
     innovated_tensor = innovation(embedded_vec, global_enc)
 
