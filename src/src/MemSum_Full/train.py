@@ -87,7 +87,7 @@ parser.add_argument("-max_doc_len", type=int, default=50)
 parser.add_argument("-num_of_epochs", type=int, default=50)
 parser.add_argument("-print_every", type=int, default=100)
 parser.add_argument("-save_every", type=int, default=500)
-parser.add_argument("-validate_every",  type=int, default=1000)
+parser.add_argument("-validate_every",  type=int, default=116938) # validate every is higher
 parser.add_argument("-restore_old_checkpoint", type=bool, default=True)
 parser.add_argument("-learning_rate", type=float, default=1e-4)
 parser.add_argument("-warmup_step",  type=int, default=1000)
@@ -221,8 +221,13 @@ if ckpt is not None:
     extraction_context_decoder.load_state_dict(
         ckpt["extraction_context_decoder"])
     extractor.load_state_dict(ckpt["extractor"])
-    LOG("model restored!")
-    print("model restored!")
+    if pegasus_mode and two_heads:
+        LOG("innovation weights restored!")
+        print("innovation weights restored!")
+        innovation.load_state_dict(ckpt["innovation"])
+    LOG(f"{model_folder} model restored!")
+
+    print(f"{model_folder} model restored!")
 
 gpu_list = np.arange(n_device).tolist()
 device = torch.device("cuda:%d" % (
@@ -238,6 +243,7 @@ local_sentence_encoder.to(device)
 global_context_encoder.to(device)
 extraction_context_decoder.to(device)
 extractor.to(device)
+
 
 if device.type == "cuda" and n_device > 1:
     local_sentence_encoder = nn.DataParallel(local_sentence_encoder, gpu_list)
@@ -263,6 +269,8 @@ else:
         [par for par in global_context_encoder.parameters() if par.requires_grad] + \
         [par for par in extraction_context_decoder.parameters() if par.requires_grad] + \
         [par for par in extractor.parameters() if par.requires_grad]
+    if pegasus_mode and two_heads:
+        model_parameters += [par for par in innovation.parameters() if par.requires_grad]
 
 optimizer = torch.optim.Adam(
     model_parameters, lr=learning_rate, weight_decay=weight_decay)
@@ -293,6 +301,21 @@ if ckpt is not None:
 
 rouge_cal = rouge_scorer.RougeScorer(
     ['rouge1', 'rouge2', 'rougeLsum'], use_stemmer=True)
+
+save_dict = {
+                "current_batch": current_batch,
+                "local_sentence_encoder": local_sentence_encoder_ema,
+                "global_context_encoder": global_context_encoder_ema,
+                "extraction_context_decoder": extraction_context_decoder_ema,
+                "extractor": extractor_ema,
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict()
+            }
+if pegasus_mode and two_heads:
+    save_dict['innovation'] = innovation
+
+save_model(save_dict, model_folder+"/model_batch_%d.pt" % (current_batch), max_to_keep=100)
+print("saved\n")
 
 
 def train_iteration(batch):
@@ -589,7 +612,7 @@ for epoch in range(current_epoch, num_of_epochs):
             # scheduler.step( (avg_val_rouge1 + avg_val_rouge2 +avg_val_rougeL)/3 )
 
         if current_batch % save_every == 0 or count == len(train_data_loader) - 1:
-            save_model({
+            save_dict = {
                 "current_batch": current_batch,
                 "local_sentence_encoder": local_sentence_encoder_ema,
                 "global_context_encoder": global_context_encoder_ema,
@@ -597,7 +620,11 @@ for epoch in range(current_epoch, num_of_epochs):
                 "extractor": extractor_ema,
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict()
-            }, model_folder+"/model_batch_%d.pt" % (current_batch), max_to_keep=100)
+            }
+            if pegasus_mode and two_heads:
+                save_dict['innovation'] = innovation
+            
+            save_model(save_dict, model_folder+"/model_batch_%d.pt" % (current_batch), max_to_keep=100)
 
 
 

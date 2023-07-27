@@ -12,6 +12,7 @@ def load_model( model_folder ):
     if len( ckpt_list ) >0:
         ckpt_list.sort( key = os.path.getmtime )
         ckpt_name = ckpt_list[-1]
+        print(f"model is: {ckpt_name}\n")
         if torch.cuda.is_available():
             ckpt = torch.load( ckpt_name )
         else:
