@@ -1,13 +1,16 @@
-from src.MemSum.src.MemSum_Full.model import LocalSentenceEncoder as LocalSentenceEncoder_MemSum_Full
-from src.MemSum.src.MemSum_Full.model import GlobalContextEncoder as GlobalContextEncoder_MemSum_Full
-from src.MemSum.src.MemSum_Full.model import ExtractionContextDecoder as ExtractionContextDecoder_MemSum_Full
-from src.MemSum.src.MemSum_Full.model import Extractor as Extractor_MemSum_Full
-from src.MemSum.src.MemSum_Full.datautils import Vocab as Vocab_MemSum_Full
-from src.MemSum.src.MemSum_Full.datautils import tokenize_sentences
-from transformers import AutoTokenizer
+from src.src.MemSum_Full.model import LocalSentenceEncoder as LocalSentenceEncoder_MemSum_Full
+from src.src.MemSum_Full.innovation_block import *
 
 
-from src.MemSum.src.MemSum_Full.datautils import SentenceTokenizer as SentenceTokenizer_MemSum_Full
+from src.src.MemSum_Full.model import *
+from src.src.MemSum_Full.model import GlobalContextEncoder as GlobalContextEncoder_MemSum_Full
+from src.src.MemSum_Full.model import ExtractionContextDecoder as ExtractionContextDecoder_MemSum_Full
+from src.src.MemSum_Full.model import Extractor as Extractor_MemSum_Full
+from src.src.MemSum_Full.datautils import Vocab as Vocab_MemSum_Full
+from src.src.MemSum_Full.datautils import tokenize_sentences
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+from src.src.MemSum_Full.datautils import SentenceTokenizer as SentenceTokenizer_MemSum_Full
 
 
 import torch.nn.functional as F
@@ -24,7 +27,7 @@ model_name = "google/pegasus-x-base"
 peg_tokenizer = AutoTokenizer.from_pretrained(
     model_name)
 class MemSum:
-    def __init__( self, model_path, vocabulary_path, gpu = None , embed_dim=200, num_heads=8, hidden_dim = 1024, N_enc_l = 2 , N_enc_g = 2, N_dec = 3,  max_seq_len =100, max_doc_len = 500, pegasus_mode = False  ):
+    def __init__( self, model_path, vocabulary_path, gpu = None , embed_dim=200, num_heads=8, hidden_dim = 1024, N_enc_l = 2 , N_enc_g = 2, N_dec = 3,  max_seq_len =100, max_doc_len = 50, pegasus_mode = False, two_heads = False):
         with open( vocabulary_path , "rb" ) as f:
             words = pickle.load(f)
         self.vocab = Vocab_MemSum_Full( words )
@@ -33,17 +36,32 @@ class MemSum:
         self.global_context_encoder = GlobalContextEncoder_MemSum_Full( embed_dim, num_heads, hidden_dim, N_enc_g )
         self.extraction_context_decoder = ExtractionContextDecoder_MemSum_Full( embed_dim, num_heads, hidden_dim, N_dec )
         self.extractor = Extractor_MemSum_Full( embed_dim, num_heads )
-        ckpt = torch.load( model_path, map_location = "cpu" )
+
+        self.two_heads = two_heads
+
+        if self.two_heads and pegasus_mode:
+            self.innovation = InnovationBlock(dim = embed_dim, n_heads = num_heads)
+            model_pubmed_checkpoint = "google/pegasus-pubmed"
+            self.model_abs = AutoModelForSeq2SeqLM.from_pretrained(model_pubmed_checkpoint)  
+            self.tokenizer_abs = AutoTokenizer.from_pretrained(model_pubmed_checkpoint)
+
+        ckpt = torch.load( model_path, map_location = "cpu")
         self.local_sentence_encoder.load_state_dict( ckpt["local_sentence_encoder"] )
         self.global_context_encoder.load_state_dict( ckpt["global_context_encoder"] )
         self.extraction_context_decoder.load_state_dict( ckpt["extraction_context_decoder"] )
         self.extractor.load_state_dict(ckpt["extractor"])
+
+        if self.two_heads and pegasus_mode:
+            self.innovation.load_state_dict(ckpt["innovation"])
         
-        self.device =  torch.device( "cuda" if gpu is not None and torch.cuda.is_available() else "cpu"  )        
+        self.device = 'cuda' if gpu else 'cpu' #torch.device("cuda" if gpu is not None and torch.cuda.is_available() else "cpu")        
         self.local_sentence_encoder.to(self.device)
         self.global_context_encoder.to(self.device)
         self.extraction_context_decoder.to(self.device)
         self.extractor.to(self.device)
+        if self.two_heads and pegasus_mode:
+            self.model_abs.to(self.device)
+            self.innovation.to(self.device)
         
         self.sentence_tokenizer = SentenceTokenizer_MemSum_Full()
         self.max_seq_len = max_seq_len
@@ -63,6 +81,10 @@ class MemSum:
          ]
         """
         ## tokenization:
+        if self.peg and self.two_heads:
+            doc = document_batch.copy()
+            document_batch = [document_batch[1]['text']]
+        
         document_length_list = []
         sentence_length_list = []
         tokenized_document_batch = []
@@ -107,8 +129,8 @@ class MemSum:
         seqs = np.asarray(seqs)
         seqs = torch.from_numpy(seqs).to(self.device)
         if self.peg:
-            in_seqs['input_ids'] = input_ids
-            in_seqs['attention_mask'] = attention_mask
+            in_seqs['input_ids'] = input_ids.to(self.device)
+            in_seqs['attention_mask'] = attention_mask.to(self.device)
 
         doc_mask = np.asarray(doc_mask) == 1
         
@@ -119,10 +141,12 @@ class MemSum:
         p_stop_history = []
         
         with torch.no_grad():
-            # print("DEVICE: ", self.device)
             if self.peg:
-                
-                in_seqs['input_ids'] = in_seqs['input_ids'].unsqueeze(0).type(torch.cuda.LongTensor)
+                if self.device == 'cuda':
+                    in_seqs['input_ids'] = in_seqs['input_ids'].unsqueeze(0).type(torch.cuda.LongTensor)
+                else:
+                    in_seqs['input_ids'] = in_seqs['input_ids'].unsqueeze(0).type(torch.LongTensor)
+               
 
                 # print("input: ", in_seqs['input_ids'].shape)
                 # print(in_seqs['input_ids'].dtype)
@@ -131,7 +155,7 @@ class MemSum:
                 num_documents = in_seqs['input_ids'].shape[0]
 
                 sen_embed  = self.local_sentence_encoder(in_seqs)
-                # print("out: ", sen_embed.shape)
+       
 
 
             else:
@@ -141,6 +165,23 @@ class MemSum:
 
             sen_embed = sen_embed.view( -1, num_sentences, sen_embed.size(1) )
             relevance_embed = self.global_context_encoder( sen_embed, doc_mask  )
+          
+            if self.peg and self.two_heads:
+                # abstract is defined by teacher forcing mechanism, in 'validation_iteration' abstracts is inferred by pegasus large
+                # model_abs: PEGASUS-LARGE (ENCODER+DECODER) // model_s: PEGASUS-BASE (only ENCODER)
+                articles = [doc[0]['article']]
+                inputs = tokenize_sentences(articles, tokenizer=self.tokenizer_abs, max_len = 256, tensor_type = 'pt')
+
+                # Generate Summary
+                summary_ids = self.model_abs.generate(inputs["input_ids"].to(self.device)).detach()
+                abstracts = self.tokenizer_abs.batch_decode(summary_ids, skip_special_tokens=True,
+                                                clean_up_tokenization_spaces=False)
+                
+                embedded_vec = get_embedded_abstract_from_abs(abstracts, peg_tokenizer, 100, self.device, model_s)
+                relevance_embed = self.innovation(embedded_vec, relevance_embed)
+     
+
+        
 
             # print(doc_mask)
             # print(seqs)
