@@ -32,16 +32,16 @@ Download the models and the processed data from this drive:
 ### How this repository is organized  
 This repository is built upon the original repository of MemSum, so as to repeat fairly their experiments and setting our framework properly.  
 Our contributions are in the following files:  
-    - evaluation.ipynb: Evaluate on test set the trained models;  
-    - preprocessing.ipynb: Clean the abstractive dataset and match it with the extractive;  
-    - proposal_presentation.pptx: Preliminary presentation of our work;  
-    - src/src/MemSum_Full/datautils.py: Transformer tokenization;  
-    - src/src/MemSum_Full/train.py: Transformer model and data loading;
-    - src/src/MemSum_Full/innovation_block.py: Abstractive summarization of SAESUM;  
-    - src/src/MemSum_Full/model.py: Modification of the Local Sentence Encoder (LSE);
-    - src/summarizers.py: Inserted test inference for one_head and two_heads models;
-    - src/training_utils.py: WANDB utilities and set seed for reproducibility;  
-    - summaries/: Here are contained the summaries also referred to in the report.  
+* evaluation.ipynb: Evaluate on test set the trained models;  
+* preprocessing.ipynb: Clean the abstractive dataset and match it with the extractive;  
+* proposal_presentation.pptx: Preliminary presentation of our work;  
+* src/src/MemSum_Full/datautils.py: Transformer tokenization;  
+* src/src/MemSum_Full/train.py: Transformer model and data loading;  
+* src/src/MemSum_Full/innovation_block.py: Abstractive summarization of SAESUM;  
+* src/src/MemSum_Full/model.py: Modification of the Local Sentence Encoder (LSE);  
+* src/summarizers.py: Inserted test inference for one_head and two_heads models;  
+* src/training_utils.py: WANDB utilities and set seed for reproducibility;  
+* summaries/: Here are contained the summaries also referred to in the report.  
 To eval the models on test open the `evaluation.ipynb`.  
 
 
