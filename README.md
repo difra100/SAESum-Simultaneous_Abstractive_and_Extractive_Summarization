@@ -1,7 +1,7 @@
 # SAESum: Simultaneous Abstractive and Extractive Summarization.
 Over the years, the Natural Language Processing community has witnessed an increasing interest in improving abstractive and extractive text summarization techniques. However, there is still little attention to develop methodologies that solve these tasks simultaneously, even though the objectives are similar from a semantic and conceptual point of view.\\
-In this repository, we implement SAESUM, a framework designed to perform extractive and abstractive summarization simultaneously, that attempts to enhance the performance of the former task leveraging the information extracted with the latter.
-
+In this repository, we implement SAESUM, a framework designed to perform extractive and abstractive summarization simultaneously, that attempts to enhance the performance of the former task leveraging the information extracted with the latter.  
+![Example Image](images/SAESUM.png)  
 
 ## How to use this repository
 Install the requirements first:  
@@ -35,13 +35,15 @@ Our contributions are in the following files:
     - evaluation.ipynb: Evaluate on test set the trained models;  
     - preprocessing.ipynb: Clean the abstractive dataset and match it with the extractive;  
     - proposal_presentation.pptx: Preliminary presentation of our work;  
-    - src/src/MemSum_Full/datautils.py: Transformer tokenization;
+    - src/src/MemSum_Full/datautils.py: Transformer tokenization;  
     - src/src/MemSum_Full/train.py: Transformer model and data loading;
     - src/src/MemSum_Full/innovation_block.py: Abstractive summarization of SAESUM;  
     - src/src/MemSum_Full/model.py: Modification of the Local Sentence Encoder (LSE);
     - src/summarizers.py: Inserted test inference for one_head and two_heads models;
     - src/training_utils.py: WANDB utilities and set seed for reproducibility;  
     - summaries/: Here are contained the summaries also referred to in the report.  
+To eval the models on test open the `evaluation.ipynb`.  
+
 
 
 
