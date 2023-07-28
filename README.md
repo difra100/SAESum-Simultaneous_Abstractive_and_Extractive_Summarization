@@ -26,8 +26,8 @@ python src/src/MemSum_Full/train.py -wandb_logger True -two_heads False -pegasus
 ```  
 The name of the relative paths suggest how they file should be organized in order to make everything work.  
 Download the models and the processed data from this drive:  
-* models download:  
-* data download:  
+* models download: https://drive.google.com/drive/folders/15BD8s9qDdk_LpuKxg1R5swWQ0mSVAq3w?usp=sharing 
+* data download: https://drive.google.com/drive/folders/1l_JZVJMx6B5uEqg84mBSqDKXatR9gWGC?usp=sharing 
 
 ### How this repository is organized  
 This repository is built upon the original repository of MemSum, so as to repeat fairly their experiments and setting our framework properly.  
