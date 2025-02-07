@@ -18,7 +18,7 @@ Summarization is an essential **Natural Language Processing (NLP)** task that fo
 
 Each method has its strengths and limitations. Abstractive summarization involves **more computationally intensive NLP techniques** 🖥️ and is harder to evaluate due to the lack of one-to-one mappings with the source text. Meanwhile, extractive summarization focuses on **preserving exact information** and is more suitable when training data is limited.  
 
-To achieve a more robust and effective summarization system, we have developed **SAESUM** 💡 – a hybrid model that integrates abstractive and extractive summarization. Our model **enhances extractive summaries by incorporating contextual information from abstractive summaries**. It combines the **MemSum [Gu et al., 2022](https://arxiv.org/abs/2107.08929) 📌 extractive summarization algorithm** and **PEGASUS [Zhang et al., 2020](https://arxiv.org/abs/1912.08777) 🐎 for abstractive summarization**.  
+To achieve a more robust and effective summarization system, we have developed **SAESUM** 💡 – a hybrid model that integrates abstractive and extractive summarization. Our model **enhances extractive summaries by incorporating contextual information from abstractive summaries**. It combines the **[MemSum (Gu et al., 2022)](https://arxiv.org/abs/2107.08929) 📌 extractive summarization algorithm** and **[ PEGASUS (Zhang et al., 2020)](https://arxiv.org/abs/1912.08777) 🐎 for abstractive summarization**.  
 
 📈 Recent advancements in **Transformers*** have revolutionized NLP tasks, including summarization. Pre-transformer era models relied on **word embeddings** (e.g., **Word2Vec, GloVe**), and sequence models like **LSTMs**, which struggled with long-text dependencies.  
 
