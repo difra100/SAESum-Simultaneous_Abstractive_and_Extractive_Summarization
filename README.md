@@ -8,6 +8,26 @@
 
 ---
 
+## 🔍 **Overview**  
+
+Summarization is an essential **Natural Language Processing (NLP)** task that focuses on generating **concise** and **informative** summaries from large bodies of text. 📜🔍
+📝 Summarization methods are typically categorized into two main types:  
+
+- ✨ **Abstractive Summarization** – Interprets and paraphrases the main concepts to create a coherent summary.  
+- 📌 **Extractive Summarization** – Extracts the most relevant sentences while maintaining the original text structure.  
+
+Each method has its strengths and limitations. Abstractive summarization involves **more computationally intensive NLP techniques** 🖥️ and is harder to evaluate due to the lack of one-to-one mappings with the source text. Meanwhile, extractive summarization focuses on **preserving exact information** and is more suitable when training data is limited.  
+
+To achieve a more robust and effective summarization system, we have developed **SAESUM** 💡 – a hybrid model that integrates abstractive and extractive summarization. Our model **enhances extractive summaries by incorporating contextual information from abstractive summaries**. It combines the **MemSum [Gu et al., 2022](https://arxiv.org/abs/2203.08458) 📌 extractive summarization algorithm** and **PEGASUS [Zhang et al., 2020](https://arxiv.org/abs/1912.08777) 🐎 for abstractive summarization**.  
+
+🔥 Recent advancements in **Transformers*** have revolutionized NLP tasks, including summarization. Pre-transformer era models relied on **word embeddings** (e.g., **Word2Vec, GloVe**), and sequence models like **LSTMs**, which struggled with long-text dependencies.  
+
+🔥 Modern summarization systems now leverage **Transformer-based architectures**, this inspired us to enhance **MemSum** 📌, which uses **reinforcement learning** 🧠 to select key sentences, with **semantic information from abstractive summaries**, leading to the development of **SAESUM** 💡.  
+
+Unlike previous works, which primarily use **extractive summaries to enhance abstractive summarization**, SAESUM does the **opposite** – improving extractive summarization using abstractive-generated information.
+
+---
+
 ## 🛠️ **How to Use This Repository**  
 
 ### ✅ **Installation**  
@@ -39,8 +59,8 @@ python src/src/MemSum_Full/train.py -wandb_logger True -two_heads False -pegasus
 ## 📥 **Dataset and Model Downloads**  
 Ensure that files are organized as indicated in the relative paths. You can download the required models and processed data from the following links:  
 
-🔗 **Models:** [Google Drive Link](https://drive.google.com/drive/folders/15BD8s9qDdk_LpuKxg1R5swWQ0mSVAq3w?usp=sharing)  
-🔗 **Data:** [Google Drive Link](https://drive.google.com/drive/folders/1l_JZVJMx6B5uEqg84mBSqDKXatR9gWGC?usp=sharing)  
+🔗  [**Models**](https://drive.google.com/drive/folders/15BD8s9qDdk_LpuKxg1R5swWQ0mSVAq3w?usp=sharing)  
+🔗  [**Data**](https://drive.google.com/drive/folders/1l_JZVJMx6B5uEqg84mBSqDKXatR9gWGC?usp=sharing)  
 
 ---
 
@@ -65,19 +85,9 @@ This repository builds upon the original **MemSum** repository to ensure fair ex
 
 ---
 
-##  **Project Contributors**  
-
-👨‍💻 **Andrea Giuseppe Di Francesco** – 1836928  
-👨‍💻 **Antonio Scardino** – 2020613  
+### 👥 Project Contributors
+🔥
+-  [Andrea Giuseppe di Francesco](https://github.com/difra100)
+-  [Antonio Scardino](https://github.com/antoscardi) 
 
 ---
-
-
-
-
-
-
-### Project Contributors
-* Andrea Giuseppe Di Francesco, 1836928
-* Antonio Scardino, 2020613
-
