@@ -1,4 +1,4 @@
-# 🚀 **Simultaneous Abstractive and Extractive Summarization**  
+# 📝 **Simultaneous Abstractive and Extractive Summarization**  
 
 📖 Over the years, the **Natural Language Processing (NLP)** community has shown increasing interest in enhancing both **abstractive** and **extractive** text summarization techniques. However, relatively little attention has been given to methodologies that address both tasks **simultaneously**, despite their conceptual and semantic similarities.  
 
