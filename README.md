@@ -72,14 +72,14 @@ This repository builds upon the original **MemSum** repository to ensure fair ex
 
 📂 **evaluation.ipynb** – 📊 Evaluates trained models on the test set.  
 📂 **preprocessing.ipynb** – 🧹 Cleans the abstractive dataset and aligns it with the extractive dataset.  
-📂 **proposal_presentation.pptx** – 📝 Initial presentation of the project.  
+📂 **proposal_presentation.pptx** –  🎤 Initial presentation of the project.  
 📂 **src/src/MemSum_Full/datautils.py** – 🔠 Implements transformer-based tokenization.  
-📂 **src/src/MemSum_Full/train.py** – 🤖 Defines the transformer model and data loading process.  
+📂 **src/src/MemSum_Full/train.py** –  🏋️‍♂️ Defines the transformer model and data loading process.  
 📂 **src/src/MemSum_Full/innovation_block.py** – ✨ Implements the abstractive summarization component for SAESUM.  
-📂 **src/src/MemSum_Full/model.py** – 🏗️ Modifies the **Local Sentence Encoder (LSE)** for improved performance.  
-📂 **src/summarizers.py** – 🛠️ Adds test inference functionality for **one_head** and **two_heads** models.  
-📂 **src/training_utils.py** – 🎯 Provides **WANDB utilities** and ensures **reproducibility** via seed setting.  
-📂 **summaries/** –  Stores generated summaries referenced in the report.  
+📂 **src/src/MemSum_Full/model.py** – ⚙️ Modifies the **Local Sentence Encoder (LSE)** for improved performance.  
+📂 **src/summarizers.py** –  🧪 Adds test inference functionality for **one_head** and **two_heads** models.  
+📂 **src/training_utils.py** – 🛠️ Provides **WANDB utilities** and ensures **reproducibility** via seed setting.  
+📂 **summaries/** –  🎯 Stores generated summaries referenced in the report.  
 
 ▶️ To evaluate models on the test set, open **`evaluation.ipynb`** and run the provided scripts.  
 
