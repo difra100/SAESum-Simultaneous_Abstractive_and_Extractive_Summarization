@@ -81,7 +81,7 @@ This repository builds upon the original **MemSum** repository to ensure fair ex
 📂 **src/training_utils.py** – 🎯 Provides **WANDB utilities** and ensures **reproducibility** via seed setting.  
 📂 **summaries/** –  Stores generated summaries referenced in the report.  
 
-📌 To evaluate models on the test set, open **`evaluation.ipynb`** and run the provided scripts.  
+▶️ To evaluate models on the test set, open **`evaluation.ipynb`** and run the provided scripts.  
 
 ---
 
